@@ -5,6 +5,8 @@ use std::iter::Cloned;
 use std::marker::PhantomData;
 use std::ops::*;
 
+use crate::util::f32_approx_eq;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Vector<N: Clone + Num>(Vec<N>);
 
@@ -29,6 +31,12 @@ pub trait VectorRef<N: Clone + Num>: Sized {
             .zip(rhs.iter())
             .map(|(l, r)| l * r)
             .fold(N::zero(), |l, r| l + r)
+    }
+
+    fn pad(&self, ndim: u8) -> Vector<N> {
+        self.iter()
+            .pad_using(ndim as usize, |_| N::zero())
+            .collect()
     }
 }
 
@@ -149,17 +157,16 @@ impl<N: Clone + Num> IndexMut<u8> for Vector<N> {
 }
 
 impl<N: Clone + Num> Vector<N> {
-    pub fn iter(&self) -> impl '_ + Iterator<Item = N> {
-        self.0.iter().cloned()
-    }
-}
-impl<N: Clone + Num> Vector<N> {
     pub const EMPTY: Self = Self(Vec::new());
 
     pub fn unit(axis: u8) -> Self {
         let mut ret = vector![N::zero(); axis as _];
         ret[axis] = N::one();
         ret
+    }
+
+    pub fn iter(&self) -> impl '_ + Iterator<Item = N> {
+        self.0.iter().cloned()
     }
 }
 
@@ -185,6 +192,15 @@ impl<'a, N: Clone + Num> IntoIterator for &'a Vector<N> {
 impl<N: Clone + Num> FromIterator<N> for Vector<N> {
     fn from_iter<T: IntoIterator<Item = N>>(iter: T) -> Self {
         Self(iter.into_iter().collect())
+    }
+}
+
+impl Vector<f32> {
+    pub fn approx_eq(&self, other: &Self) -> bool {
+        let ndim = std::cmp::max(self.ndim(), other.ndim()) as usize;
+        let self_xs = self.iter().pad_using(ndim, |_| 0.0);
+        let other_xs = other.iter().pad_using(ndim, |_| 0.0);
+        self_xs.zip(other_xs).all(|(l, r)| f32_approx_eq(l, r))
     }
 }
 

@@ -1,6 +1,8 @@
+use itertools::Itertools;
 use num_traits::{Num, One, Zero};
 use std::ops::*;
 
+use crate::util::f32_approx_eq;
 use crate::vector::{Vector, VectorRef};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -152,6 +154,13 @@ impl<N: Clone + Num, V: VectorRef<N>> Mul<V> for Matrix<N> {
 
     fn mul(self, rhs: V) -> Self::Output {
         (0..self.ndim()).map(|i| self.row(i).dot(&rhs)).collect()
+    }
+}
+
+impl Matrix<f32> {
+    pub fn approx_eq(&self, other: &Self) -> bool {
+        let ndim = std::cmp::max(self.ndim(), other.ndim());
+        (0..ndim).all(|x| (0..ndim).all(|y| f32_approx_eq(self.get(x, y), other.get(x, y))))
     }
 }
 

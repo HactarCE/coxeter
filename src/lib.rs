@@ -12,6 +12,7 @@ use std::ops::*;
 mod vector;
 #[macro_use]
 mod matrix;
+mod util;
 
 use matrix::Matrix;
 use vector::Vector;
