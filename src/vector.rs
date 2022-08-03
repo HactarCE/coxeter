@@ -8,7 +8,7 @@ use std::ops::*;
 use crate::util::f32_approx_eq;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Vector<N: Clone + Num>(Vec<N>);
+pub struct Vector<N: Clone + Num>(pub Vec<N>);
 
 pub trait VectorRef<N: Clone + Num>: Sized {
     fn ndim(&self) -> u8;
@@ -23,10 +23,7 @@ pub trait VectorRef<N: Clone + Num>: Sized {
         }
     }
 
-    fn dot<V: VectorRef<N>>(&self, rhs: V) -> N
-    where
-        N: Num,
-    {
+    fn dot(&self, rhs: impl VectorRef<N>) -> N {
         self.iter()
             .zip(rhs.iter())
             .map(|(l, r)| l * r)
@@ -152,6 +149,7 @@ impl<N: Clone + Num> Index<u8> for &'_ Vector<N> {
 }
 impl<N: Clone + Num> IndexMut<u8> for Vector<N> {
     fn index_mut(&mut self, index: u8) -> &mut Self::Output {
+        self.0.resize(index as usize + 1, N::zero());
         &mut self.0[index as usize]
     }
 }
@@ -160,7 +158,7 @@ impl<N: Clone + Num> Vector<N> {
     pub const EMPTY: Self = Self(Vec::new());
 
     pub fn unit(axis: u8) -> Self {
-        let mut ret = vector![N::zero(); axis as _];
+        let mut ret = vector![N::zero(); axis as usize+1];
         ret[axis] = N::one();
         ret
     }
@@ -201,6 +199,11 @@ impl Vector<f32> {
         let self_xs = self.iter().pad_using(ndim, |_| 0.0);
         let other_xs = other.iter().pad_using(ndim, |_| 0.0);
         self_xs.zip(other_xs).all(|(l, r)| f32_approx_eq(l, r))
+    }
+
+    pub fn rotate_toward(&self, other: &Self, fraction_of_pi: usize) -> Vector<f32> {
+        let angle = std::f32::consts::PI / fraction_of_pi as f32;
+        self * angle.cos() + other * angle.sin()
     }
 }
 

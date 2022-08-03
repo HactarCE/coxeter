@@ -51,14 +51,20 @@ impl<N: Clone + Num> Matrix<N> {
     }
 
     pub fn get(&self, col: u8, row: u8) -> N {
-        self.elems
-            .get(col as usize * self.ndim() as usize + row as usize)
-            .cloned()
-            .unwrap_or(N::zero())
+        let ndim = self.ndim();
+        if col < ndim && row < ndim {
+            self.elems[col as usize * ndim as usize + row as usize].clone()
+        } else if col == row {
+            N::one()
+        } else {
+            N::zero()
+        }
     }
     pub fn get_mut(&mut self, col: u8, row: u8) -> &mut N {
-        let ndim = self.ndim() as usize;
-        &mut self.elems[col as usize * ndim + row as usize]
+        let ndim = self.ndim();
+        assert!(col < ndim);
+        assert!(row < ndim);
+        &mut self.elems[col as usize * ndim as usize + row as usize]
     }
     pub fn row(&self, row: u8) -> MatrixRow<'_, N> {
         MatrixRow { matrix: self, row }
@@ -129,7 +135,7 @@ impl<'a, N: Clone + Num + std::fmt::Debug> Mul for &'a Matrix<N> {
     type Output = Matrix<N>;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        let new_ndim = std::cmp::min(self.ndim(), rhs.ndim());
+        let new_ndim = std::cmp::max(self.ndim(), rhs.ndim());
         let mut new_matrix = Matrix::zero(new_ndim);
 
         for (i, self_col) in self.cols().enumerate() {
@@ -139,9 +145,6 @@ impl<'a, N: Clone + Num + std::fmt::Debug> Mul for &'a Matrix<N> {
                     let self_elem = self_col.get(y);
                     *new_matrix.get_mut(x, y) =
                         new_matrix.get(x, y) + self_elem.clone() * rhs_elem.clone();
-                    if x == 0 && y == 0 {
-                        dbg!((self_elem.clone(), rhs_elem.clone()));
-                    }
                 }
             }
         }
@@ -150,7 +153,7 @@ impl<'a, N: Clone + Num + std::fmt::Debug> Mul for &'a Matrix<N> {
     }
 }
 impl<N: Clone + Num, V: VectorRef<N>> Mul<V> for Matrix<N> {
-    type Output = Matrix<N>;
+    type Output = Vector<N>;
 
     fn mul(self, rhs: V) -> Self::Output {
         (0..self.ndim()).map(|i| self.row(i).dot(&rhs)).collect()
@@ -170,8 +173,11 @@ mod tests {
 
     #[test]
     fn test_matrix_multiply() {
-        let m1 = matrix![[1, 2, 0, 0], [0, 1, 1, 0], [1, 1, 1, 0], [0, 0, 0, 0]];
+        let m1 = matrix![[1, 2, 0, 0], [0, 1, 1, 0], [1, 1, 1, 0], [0, 0, 0, -3]];
         let m2 = matrix![[1, 2, 4], [2, 3, 2], [1, 1, 2]];
-        assert_eq!(&m1 * &m2, matrix![[5, 8, 6], [4, 9, 5], [3, 5, 3]]);
+        assert_eq!(
+            &m1 * &m2,
+            matrix![[5, 8, 6, 0], [4, 9, 5, 0], [3, 5, 3, 0], [0, 0, 0, -3]]
+        );
     }
 }
