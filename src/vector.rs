@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use num_traits::{Num, Signed, Zero};
+use num_traits::Num;
 use std::fmt;
 use std::iter::Cloned;
 use std::marker::PhantomData;
@@ -155,7 +155,7 @@ impl<N: Clone + Num> IndexMut<u8> for Vector<N> {
 }
 
 impl<N: Clone + Num> Vector<N> {
-    pub const EMPTY: Self = Self(Vec::new());
+    pub const EMPTY: Self = Self(vec![]);
 
     pub fn unit(axis: u8) -> Self {
         let mut ret = vector![N::zero(); axis as usize+1];

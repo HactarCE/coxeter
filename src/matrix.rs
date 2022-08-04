@@ -1,5 +1,4 @@
-use itertools::Itertools;
-use num_traits::{Num, One, Zero};
+use num_traits::Num;
 use std::ops::*;
 
 use crate::util::f32_approx_eq;
@@ -13,6 +12,11 @@ pub struct Matrix<N: Clone + Num> {
     elems: Vec<N>,
 }
 impl<N: Clone + Num> Matrix<N> {
+    pub const EMPTY_IDENT: Self = Matrix {
+        ndim: 0,
+        elems: vec![],
+    };
+
     pub fn zero(ndim: u8) -> Self {
         Self {
             ndim,
