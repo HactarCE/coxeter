@@ -19,17 +19,15 @@ impl Shape {
 
         let rank = ndim - 1;
         for gen in facet_generators {
-            for norm in symmetry
+            for new in symmetry
                 .elements()
                 .map(|e| symmetry.matrix(e).transform(gen))
             {
-                if ret.elements(rank).all(|e| !norm.approx_eq(ret.vector(e))) {
-                    ret.vectors.push(rank, norm);
+                if ret.elements(rank).all(|e| !new.approx_eq(ret.vector(e))) {
+                    ret.vectors.push(rank, new);
                 }
             }
         }
-
-        dbg!(&ret.vectors);
 
         ret
     }

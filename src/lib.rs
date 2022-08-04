@@ -30,6 +30,12 @@ mod tests {
 
         let octahedron = Shape::new(&cubic_symmetry, &vec![vector![1.0, 1.0, 1.0]]);
         assert_eq!(octahedron.elements(2).len(), 8);
+
+        let duoprism = Shape::new(
+            &CoxeterDiagram::with_edges(vec![3, 2, 4]).group(),
+            &vec![Vector::unit(1), Vector::unit(3)],
+        );
+        assert_eq!(duoprism.elements(3).len(), 7);
     }
 
     #[test]

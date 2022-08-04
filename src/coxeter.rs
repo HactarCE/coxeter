@@ -84,7 +84,7 @@ impl From<MirrorGenerator> for Matrix<f32> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Mirror(Vector<f32>);
+pub struct Mirror(pub Vector<f32>);
 impl From<Mirror> for Matrix<f32> {
     fn from(mirror: Mirror) -> Self {
         let ndim = mirror.0.ndim();
