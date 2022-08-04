@@ -91,6 +91,10 @@ impl<N: Clone + Num> Matrix<N> {
         }
         self
     }
+
+    pub fn transform(&self, v: impl VectorRef<N>) -> Vector<N> {
+        (0..self.ndim()).map(|i| self.row(i).dot(&v)).collect()
+    }
 }
 impl<N: Clone + Num> FromIterator<N> for Matrix<N> {
     fn from_iter<T: IntoIterator<Item = N>>(iter: T) -> Self {
@@ -156,14 +160,6 @@ impl<'a, N: Clone + Num + std::fmt::Debug> Mul for &'a Matrix<N> {
         new_matrix
     }
 }
-impl<N: Clone + Num, V: VectorRef<N>> Mul<V> for Matrix<N> {
-    type Output = Vector<N>;
-
-    fn mul(self, rhs: V) -> Self::Output {
-        (0..self.ndim()).map(|i| self.row(i).dot(&rhs)).collect()
-    }
-}
-
 impl Matrix<f32> {
     pub fn approx_eq(&self, other: &Self) -> bool {
         let ndim = std::cmp::max(self.ndim(), other.ndim());

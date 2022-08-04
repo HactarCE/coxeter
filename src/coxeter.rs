@@ -1,4 +1,4 @@
-use crate::{matrix::*, vector::*};
+use crate::{group::*, matrix::*, vector::*};
 
 /// Linear Coxeter diagram with unlabeled vertices.
 pub struct CoxeterDiagram {
@@ -61,6 +61,11 @@ impl CoxeterDiagram {
         }
         ret.push(Mirror(last));
         ret
+    }
+
+    pub fn group(self) -> Group {
+        let gens: Vec<_> = self.mirrors().into_iter().map(|m| m.into()).collect();
+        Group::from_generators(&gens)
     }
 }
 

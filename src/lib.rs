@@ -1,6 +1,5 @@
 //! Coxeter diagrams for puzzle symmetry groups.
 
-// #![allow(unused_imports, dead_code)]
 // #![warn(missing_docs)]
 
 #[macro_use]
@@ -9,16 +8,29 @@ mod vector;
 mod matrix;
 mod coxeter;
 mod group;
+mod shape;
 mod util;
 
 pub use coxeter::*;
 pub use group::*;
 pub use matrix::*;
+pub use shape::*;
 pub use vector::*;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_shape_facets() {
+        let cubic_symmetry = CoxeterDiagram::with_edges(vec![4, 3]).group();
+
+        let cube = Shape::new(&cubic_symmetry, &vec![Vector::unit(0)]);
+        assert_eq!(cube.elements(2).len(), 6);
+
+        let octahedron = Shape::new(&cubic_symmetry, &vec![vector![1.0, 1.0, 1.0]]);
+        assert_eq!(octahedron.elements(2).len(), 8);
+    }
 
     #[test]
     fn test_coxeter_generators() {
@@ -40,9 +52,7 @@ mod tests {
     }
 
     fn assert_group_order(edges: Vec<usize>, expected: u32) {
-        let cd = CoxeterDiagram::with_edges(edges);
-        let generators: Vec<_> = cd.mirrors().into_iter().map(Matrix::from).collect();
-        // println!("{:#?}", Group::from_generators(&generators));
-        assert_eq!(Group::from_generators(&generators).order(), expected);
+        let group = CoxeterDiagram::with_edges(edges).group();
+        assert_eq!(group.order(), expected);
     }
 }
