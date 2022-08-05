@@ -127,11 +127,11 @@ impl Group {
     pub fn order(&self) -> u32 {
         self.elem_matrices.len() as _
     }
-    pub fn elements(&self) -> impl Iterator<Item = GroupElement> {
+    pub fn elements(&self) -> impl Iterator<Item = GroupElement> + ExactSizeIterator {
         (0..self.order()).map(GroupElement)
     }
-    pub fn generators(&self) -> impl Iterator<Item = GroupElement> {
-        (1..=self.generator_count as _).map(GroupElement)
+    pub fn generators(&self) -> impl Iterator<Item = GroupElement> + ExactSizeIterator {
+        (1..self.generator_count as u32 + 1).map(GroupElement)
     }
 }
 

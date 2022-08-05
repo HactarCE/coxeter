@@ -194,7 +194,7 @@ impl<N: Clone + Num> FromIterator<N> for Vector<N> {
 }
 
 impl Vector<f32> {
-    pub fn approx_eq(&self, other: &Self) -> bool {
+    pub fn approx_eq(&self, other: impl VectorRef<f32>) -> bool {
         let ndim = std::cmp::max(self.ndim(), other.ndim()) as usize;
         let self_xs = self.iter().pad_using(ndim, |_| 0.0);
         let other_xs = other.iter().pad_using(ndim, |_| 0.0);

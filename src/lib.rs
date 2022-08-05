@@ -8,35 +8,37 @@ mod vector;
 mod matrix;
 mod coxeter;
 mod group;
-mod shape;
+mod polytope;
+// mod shape;
 mod util;
 
 pub use coxeter::*;
 pub use group::*;
 pub use matrix::*;
-pub use shape::*;
+pub use polytope::*;
+// pub use shape::*;
 pub use vector::*;
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_shape_facets() {
-        let cubic_symmetry = CoxeterDiagram::with_edges(vec![4, 3]).group();
+    // #[test]
+    // fn test_shape_facets() {
+    //     let cubic_symmetry = CoxeterDiagram::with_edges(vec![4, 3]).group();
 
-        let cube = Shape::new(&cubic_symmetry, &vec![Vector::unit(0)]);
-        assert_eq!(cube.elements(2).len(), 6);
+    //     let cube = Shape::new(&cubic_symmetry, &vec![Vector::unit(0)]);
+    //     assert_eq!(cube.elements(2).len(), 6);
 
-        let octahedron = Shape::new(&cubic_symmetry, &vec![vector![1.0, 1.0, 1.0]]);
-        assert_eq!(octahedron.elements(2).len(), 8);
+    //     let octahedron = Shape::new(&cubic_symmetry, &vec![vector![1.0, 1.0, 1.0]]);
+    //     assert_eq!(octahedron.elements(2).len(), 8);
 
-        let duoprism = Shape::new(
-            &CoxeterDiagram::with_edges(vec![3, 2, 4]).group(),
-            &vec![Vector::unit(1), Vector::unit(3)],
-        );
-        assert_eq!(duoprism.elements(3).len(), 7);
-    }
+    //     let duoprism = Shape::new(
+    //         &CoxeterDiagram::with_edges(vec![3, 2, 4]).group(),
+    //         &vec![Vector::unit(1), Vector::unit(3)],
+    //     );
+    //     assert_eq!(duoprism.elements(3).len(), 7);
+    // }
 
     #[test]
     fn test_coxeter_generators() {
