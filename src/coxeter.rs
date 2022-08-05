@@ -63,6 +63,9 @@ impl CoxeterDiagram {
         ret
     }
 
+    pub fn generators(self) -> Vec<Matrix<f32>> {
+        self.mirrors().into_iter().map(|m| m.into()).collect()
+    }
     pub fn group(self) -> Group {
         let gens: Vec<_> = self.mirrors().into_iter().map(|m| m.into()).collect();
         Group::from_generators(&gens)

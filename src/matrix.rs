@@ -93,7 +93,14 @@ impl<N: Clone + Num> Matrix<N> {
     }
 
     pub fn transform(&self, v: impl VectorRef<N>) -> Vector<N> {
-        (0..self.ndim()).map(|i| self.row(i).dot(&v)).collect()
+        let ndim = std::cmp::max(self.ndim(), v.ndim());
+        (0..ndim)
+            .map(|i| {
+                (0..ndim)
+                    .map(|j| self.get(j, i) * v.get(j))
+                    .fold(N::zero(), |a, b| a + b)
+            })
+            .collect()
     }
 }
 impl<N: Clone + Num> FromIterator<N> for Matrix<N> {

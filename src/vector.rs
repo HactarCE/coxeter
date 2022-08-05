@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use num_traits::Num;
+use num_traits::{Float, Num};
 use std::fmt;
 use std::iter::Cloned;
 use std::marker::PhantomData;
@@ -34,6 +34,16 @@ pub trait VectorRef<N: Clone + Num>: Sized {
         self.iter()
             .pad_using(ndim as usize, |_| N::zero())
             .collect()
+    }
+
+    fn mag2(&self) -> N {
+        self.dot(self)
+    }
+    fn mag(&self) -> N
+    where
+        N: Float,
+    {
+        self.mag2().sqrt()
     }
 }
 
@@ -128,6 +138,13 @@ macro_rules! impl_vector_ops {
                 self.iter().map(|x| x * rhs.clone()).collect()
             }
         }
+        impl<$num: Clone + Num> Div<$num> for $type_name {
+            type Output = Vector<$num>;
+
+            fn div(self, rhs: $num) -> Self::Output {
+                self.iter().map(|x| x / rhs.clone()).collect()
+            }
+        }
     };
 }
 impl_vector_ops!(impl<N> for Vector<N>);
@@ -206,6 +223,13 @@ impl Vector<f32> {
     pub fn rotate_toward(&self, other: &Self, fraction_of_pi: usize) -> Vector<f32> {
         let angle = std::f32::consts::PI / fraction_of_pi as f32;
         self * angle.cos() + other * angle.sin()
+    }
+
+    pub fn set_ndim(&mut self, ndim: u8) {
+        self.0.resize(ndim as _, 0.0);
+    }
+    pub fn truncate(&mut self, ndim: u8) {
+        self.0.truncate(ndim as _);
     }
 }
 
