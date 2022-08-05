@@ -102,6 +102,7 @@ impl<N: Clone + Num> FromIterator<N> for Matrix<N> {
     }
 }
 
+#[macro_export]
 macro_rules! matrix {
     ($([$($n:expr),* $(,)?]),* $(,)?) => {
         Matrix::from_elems(vec![$($($n),*),*])

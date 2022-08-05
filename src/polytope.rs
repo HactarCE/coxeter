@@ -1,5 +1,5 @@
 use smallvec::{smallvec, SmallVec};
-use std::ops::*;
+use std::{collections::HashMap, ops::*};
 
 use crate::vector::Vector;
 
@@ -131,6 +131,48 @@ impl PolytopeArena {
             }
         }
     }
+
+    pub fn polygons(&self) -> Vec<Polygon> {
+        self.polytopes
+            .iter()
+            .filter(|p| p.rank() == 2)
+            // For each polygon ...
+            .map(|p| {
+                let mut verts = Vec::with_capacity(p.children().len());
+
+                // Make an adjacency list for each vertex.
+                let mut edges: HashMap<PolytopeId, SmallVec<[PolytopeId; 2]>> = HashMap::new();
+                for (v1, v2) in p
+                    .children()
+                    .iter()
+                    .map(|&edge| self[edge].children())
+                    .flat_map(|ch| [(ch[0], ch[1]), (ch[1], ch[0])])
+                {
+                    edges.entry(v1).or_default().push(v2);
+                }
+
+                let first_edge = p.children()[0];
+                let first_vertex = self[first_edge].children()[0];
+                let mut prev = first_vertex;
+                let mut current = self[first_edge].children()[1];
+                verts.push(self[current].unwrap_point().clone());
+                while current != first_vertex {
+                    let new = edges
+                        .get(&current)
+                        .unwrap()
+                        .iter()
+                        .copied()
+                        .find(|&v| v != prev)
+                        .expect("invalid polygon");
+                    prev = current;
+                    current = new;
+                    verts.push(self[current].unwrap_point().clone());
+                }
+
+                Polygon { verts }
+            })
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -141,6 +183,18 @@ struct Polytope {
 impl Polytope {
     fn rank(&self) -> u8 {
         self.contents.rank()
+    }
+    fn unwrap_point(&self) -> &Vector<f32> {
+        match &self.contents {
+            PolytopeContents::Point(point) => point,
+            _ => panic!("expected point, got branch"),
+        }
+    }
+    fn children(&self) -> &[PolytopeId] {
+        match &self.contents {
+            PolytopeContents::Point(_) => &[],
+            PolytopeContents::Branch { children, .. } => children,
+        }
     }
 }
 
@@ -161,8 +215,13 @@ impl PolytopeContents {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 struct PolytopeId(u32);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Polygon {
+    pub verts: Vec<Vector<f32>>,
+}
 
 struct ConvexPolytope {
     verts: Vec<Vector<f32>>,

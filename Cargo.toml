@@ -9,3 +9,8 @@ edition = "2021"
 itertools = "0.10.3"
 num-traits = "0.2.15"
 smallvec = { version = "1.9.0", features = ["union"] }
+
+[dev-dependencies]
+cgmath = { version = "0.18.0", features = ["serde"] }
+eframe = { version = "0.18.0", features = ["dark-light", "persistence"] }
+serde = { version = "1.0", features = ["derive"] }
