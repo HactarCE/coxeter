@@ -149,7 +149,9 @@ impl<N: Clone + Num> Index<u8> for &'_ Vector<N> {
 }
 impl<N: Clone + Num> IndexMut<u8> for Vector<N> {
     fn index_mut(&mut self, index: u8) -> &mut Self::Output {
-        self.0.resize(index as usize + 1, N::zero());
+        if self.ndim() <= index {
+            self.0.resize(index as usize + 1, N::zero());
+        }
         &mut self.0[index as usize]
     }
 }
