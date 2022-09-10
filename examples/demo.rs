@@ -12,7 +12,7 @@ fn main() {
         options,
         Box::new(|_cc| {
             let mut dim_mappings = vec![vector![1.0, 0.0, 0.0]; MAX_NDIM as _];
-            for i in 0..3 {
+            for i in 0..4 {
                 dim_mappings[i] = Vector::unit(i as _);
             }
 
@@ -47,6 +47,7 @@ impl eframe::App for PolytopeDemo {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let pitch_id = egui::Id::new("pitch");
         let yaw_id = egui::Id::new("yaw");
+        let w_id = egui::Id::new("w");
 
         let mut log = String::new();
 
@@ -64,6 +65,11 @@ impl eframe::App for PolytopeDemo {
             ui.drag_angle(&mut yaw);
             ui.data()
                 .insert_persisted(yaw_id, yaw.rem_euclid(std::f32::consts::TAU));
+
+            ui.label("W-Offset");
+            let mut w_offset: f32 = ui.data().get_persisted(w_id).unwrap_or(1.0);
+            ui.add(egui::DragValue::new(&mut w_offset).speed(0.01));
+            ui.data().insert_persisted(w_id, w_offset);
 
             ui.separator();
             ui.add(
@@ -122,7 +128,7 @@ impl eframe::App for PolytopeDemo {
                             *v = &*v * (1.0 / v.dot(&*v).sqrt());
                         }
                     }
-                    vector_edit(ui, v, 3);
+                    vector_edit(ui, v, 4);
                 });
             }
 
@@ -138,6 +144,7 @@ impl eframe::App for PolytopeDemo {
 
             let pitch: f32 = ui.data().get_persisted(pitch_id).unwrap_or(0.0);
             let yaw: f32 = ui.data().get_persisted(yaw_id).unwrap_or(0.0);
+            let w_offset: f32 = ui.data().get_persisted(w_id).unwrap_or(1.0);
             egui::plot::Plot::new("polygon_plot")
                 .data_aspect(1.0)
                 .show(ui, |plot_ui| {
@@ -151,7 +158,9 @@ impl eframe::App for PolytopeDemo {
                                     .iter()
                                     .map(|p| {
                                         rot.transform_point({
-                                            let v = ndrot.transform(p);
+                                            let mut v = ndrot.transform(p);
+                                            let w = v[3] + w_offset;
+                                            v = v / w;
                                             cgmath::point3(v[0], v[1], v[2])
                                         })
                                     })
