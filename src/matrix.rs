@@ -51,6 +51,17 @@ impl<N: Clone + Num> Matrix<N> {
         }
     }
 
+    pub fn from_outer_product(u: impl VectorRef<N>, v: impl VectorRef<N>) -> Self {
+        let dim = std::cmp::max(u.ndim(), v.ndim());
+        let u = &u;
+        let v = &v;
+        Self::from_elems(
+            (0..dim)
+                .flat_map(|i| (0..dim).map(move |j| u.get(i) * v.get(j)))
+                .collect(),
+        )
+    }
+
     pub fn ndim(&self) -> u8 {
         self.ndim
     }
@@ -165,6 +176,7 @@ macro_rules! matrix {
     };
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct MatrixCol<'a, N: Clone + Num> {
     matrix: &'a Matrix<N>,
     col: u8,
@@ -179,6 +191,7 @@ impl<N: Clone + Num> VectorRef<N> for MatrixCol<'_, N> {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct MatrixRow<'a, N: Clone + Num> {
     matrix: &'a Matrix<N>,
     row: u8,
@@ -215,6 +228,30 @@ impl<'a, N: Clone + Num + std::fmt::Debug> Mul for &'a Matrix<N> {
         }
 
         new_matrix
+    }
+}
+impl<'a, N: Clone + Num + std::fmt::Debug> Add for &'a Matrix<N> {
+    type Output = Matrix<N>;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let new_ndim = std::cmp::max(self.ndim(), rhs.ndim());
+        Matrix::from_elems(
+            (0..new_ndim)
+                .flat_map(|i| (0..new_ndim).map(move |j| self.get(i, j) + rhs.get(i, j)))
+                .collect(),
+        )
+    }
+}
+impl<'a, N: Clone + Num + std::fmt::Debug> Sub for &'a Matrix<N> {
+    type Output = Matrix<N>;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let new_ndim = std::cmp::max(self.ndim(), rhs.ndim());
+        Matrix::from_elems(
+            (0..new_ndim)
+                .flat_map(|i| (0..new_ndim).map(move |j| self.get(i, j) - rhs.get(i, j)))
+                .collect(),
+        )
     }
 }
 impl Matrix<f32> {
