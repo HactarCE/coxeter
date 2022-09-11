@@ -26,6 +26,7 @@ fn main() {
                 cd: "3".to_string(),
                 cd_error: false,
                 poles: vec![Vector::unit(0)],
+                arrows: vec![],
             })
         }),
     );
@@ -42,6 +43,8 @@ struct PolytopeDemo {
     cd: String,
     cd_error: bool,
     poles: Vec<Vector<f32>>,
+
+    arrows: Vec<Vector<f32>>,
 }
 impl eframe::App for PolytopeDemo {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
@@ -84,9 +87,6 @@ impl eframe::App for PolytopeDemo {
                 ui.text_edit_singleline(&mut self.cd);
 
                 ui.strong("Base facets");
-                for p in &mut self.poles {
-                    vector_edit(ui, p, self.ndim);
-                }
                 ui.horizontal(|ui| {
                     if ui.button("+").clicked() {
                         self.poles.push(Vector::EMPTY);
@@ -95,6 +95,9 @@ impl eframe::App for PolytopeDemo {
                         self.poles.pop();
                     }
                 });
+                for p in &mut self.poles {
+                    vector_edit(ui, p, self.ndim);
+                }
 
                 if ui.button("Generate!").clicked() || self.auto_generate {
                     self.cd_error = false;
@@ -108,11 +111,21 @@ impl eframe::App for PolytopeDemo {
                     } else {
                         let cd = CoxeterDiagram::with_edges(xs);
                         self.ndim = cd.ndim();
+                        self.arrows = cd.mirrors().iter().map(|v| v.0.clone()).collect();
+                        let m = Matrix::from_cols(cd.mirrors().iter().map(|v| &v.0))
+                            .inverse()
+                            .transpose();
                         let group = cd.generators();
                         for p in &mut self.poles {
                             p.truncate(self.ndim);
                         }
-                        self.polygons = shape_geom(self.ndim, &group, &self.poles);
+                        let poles = self
+                            .poles
+                            .iter()
+                            .map(|v| m.transform(v))
+                            .collect::<Vec<_>>();
+                        self.arrows.extend_from_slice(&poles);
+                        self.polygons = shape_geom(self.ndim, &group, &poles);
                     }
                 }
                 ui.checkbox(&mut self.auto_generate, "Auto generate");
@@ -147,6 +160,7 @@ impl eframe::App for PolytopeDemo {
             let w_offset: f32 = ui.data().get_persisted(w_id).unwrap_or(1.0);
             egui::plot::Plot::new("polygon_plot")
                 .data_aspect(1.0)
+                .allow_boxed_zoom(false)
                 .show(ui, |plot_ui| {
                     let ndrot = Matrix::from_cols(self.dim_mappings.clone());
                     let rot = cgmath::Matrix3::from_angle_x(cgmath::Rad(pitch))
@@ -169,6 +183,24 @@ impl eframe::App for PolytopeDemo {
                             .name(i),
                         );
                     }
+                    plot_ui.arrows(egui::plot::Arrows::new(
+                        egui::plot::Values::from_values_iter(
+                            vec![egui::plot::Value::new(0, 0); self.arrows.len()].into_iter(),
+                        ),
+                        egui::plot::Values::from_values_iter(
+                            self.arrows
+                                .iter()
+                                .map(|p| {
+                                    rot.transform_point({
+                                        let mut v = ndrot.transform(p);
+                                        let w = v[3] + w_offset;
+                                        v = v / w;
+                                        cgmath::point3(v[0], v[1], v[2])
+                                    })
+                                })
+                                .map(|xy| egui::plot::Value::new(xy.x, xy.y)),
+                        ),
+                    ))
                 });
         });
     }

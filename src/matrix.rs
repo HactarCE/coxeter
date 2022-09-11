@@ -1,7 +1,8 @@
-use num_traits::Num;
+use itertools::{Itertools, Permutations};
+use num_traits::{Num, Signed};
 use std::ops::*;
 
-use crate::util::f32_approx_eq;
+use crate::util::{f32_approx_eq, permutation_parity};
 use crate::vector::{Vector, VectorRef};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -102,6 +103,54 @@ impl<N: Clone + Num> Matrix<N> {
             })
             .collect()
     }
+
+    pub fn determinant(&self) -> N
+    where
+        N: Signed,
+    {
+        (0..self.ndim)
+            .permutations(self.ndim as _)
+            .enumerate()
+            .map(|(i, p)| {
+                let parity = match permutation_parity(i) {
+                    true => -N::one(),
+                    false => N::one(),
+                };
+                p.into_iter()
+                    .enumerate()
+                    .map(|(j, k)| self.get(j as _, k))
+                    .fold(N::one(), |x, y| x * y)
+                    * parity
+            })
+            .fold(N::zero(), |x, y| x + y)
+    }
+
+    pub fn inverse(&self) -> Matrix<N>
+    where
+        N: Signed,
+        N: Clone,
+    {
+        let determinant = self.determinant();
+        let det = &determinant;
+        Matrix::from_elems(
+            (0..self.ndim)
+                .flat_map(|j| {
+                    (0..self.ndim).map(move |i| {
+                        let mut a = self.clone();
+                        for k in 0..self.ndim {
+                            *a.get_mut(i, k) = N::zero();
+                        }
+                        *a.get_mut(i, j) = N::one();
+                        a.determinant() / det.clone()
+                    })
+                })
+                .collect(),
+        )
+    }
+
+    pub fn transpose(&self) -> Matrix<N> {
+        Matrix::from_cols(self.rows().collect::<Vec<_>>())
+    }
 }
 impl<N: Clone + Num> FromIterator<N> for Matrix<N> {
     fn from_iter<T: IntoIterator<Item = N>>(iter: T) -> Self {
@@ -187,5 +236,28 @@ mod tests {
             &m1 * &m2,
             matrix![[5, 8, 6, 0], [4, 9, 5, 0], [3, 5, 3, 0], [0, 0, 0, -3]]
         );
+    }
+
+    #[test]
+    fn test_determinant() {
+        // let m = matrix![[-2, -1, 2], [2, 1, 4], [-3, 3, -1]];
+        // assert_eq!(m.determinant(), 54);
+        //let m = matrix![[3, 7], [1, -4]];
+        //assert_eq!(m.determinant(), -19);
+
+        let m = matrix![[1, 2, 3, 4], [5, 6, 8, 7], [-10, 3, 6, 2], [3, 1, 4, 1]];
+        assert_eq!(m.determinant(), -402);
+    }
+
+    #[test]
+    fn test_inverse() {
+        let m = matrix![[1., 0., 4.], [1., 1., 6.], [-3., 0., -10.]];
+        assert_eq!(&m * &m.inverse(), Matrix::ident(3));
+    }
+
+    #[test]
+    fn test_transpose() {
+        let m = matrix![[1, 2, 3], [4, 5, 6], [7, 8, 9]].transpose();
+        assert_eq!(m, matrix![[1, 4, 7], [2, 5, 8], [3, 6, 9]])
     }
 }
